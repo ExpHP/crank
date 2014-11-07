@@ -85,27 +85,28 @@ def makeLaplacian(dims, dxs, bctype):
 
 	return a
 
+def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
+	dims = potgrid.shape
+	potvec = potgrid.flatten()
 
-def getCrankNicolEvo(dims, dt, bctype, pot=None, *, lengths=None, mass=1., hbar=1.):
-	strides = getStrides(dims)
-
-	if pot is None:
-		pot = np.zeros(strides[-1])
-
-	if lengths is None:
+	if lengths is None:   # assume all lengths are 1
 		lengths = [1. for d in dims]
 
-	assert isinstance(bctype, BoundaryType)
-	assert len(pot) == strides[-1]
-
-	# more physical parameters beyond the ones supplied
 	# XXX (dims[i]-1) will not apply for PERIODIC --- or will it
 	dxs = [lengths[i] / (dims[i]-1) for i in range(len(dims))]
-	mu = (-2j) * mass / (hbar * dt)
+	return -(hbar*hbar)/(2*m) * makeLaplacian(dims,dxs,bctype) + np.diag(potvec)
 
+def getCrankNicolEvo(potgrid, bctype, dt, *, lengths=None, mass=1., hbar=1.):
 
-	matL = mu*np.eye(strides[-1]) + makeLaplacian(dims, dxs, bctype)
-	matR = mu*np.eye(strides[-1]) - makeLaplacian(dims, dxs, bctype)
+	strides = getStrides(potgrid.shape)
+
+	assert isinstance(bctype, BoundaryType)
+	assert len(potgrid.flatten()) == strides[-1]
+
+	ham = getHamiltonian(potgrid, bctype, lengths=lengths, mass=mass, hbar=hbar)
+
+	matL = np.eye(strides[-1]) - (dt/(2.j*hbar)) * ham
+	matR = np.eye(strides[-1]) + (dt/(2.j*hbar)) * ham
 	matRInv = la.inv(matR)
 
 	return matRInv.dot(matL)
@@ -118,6 +119,7 @@ def oneDeeGroundState(n):
 	prefactor = sum(np.abs(vec)**2.) ** (-0.5)
 	return prefactor * vec
 
+
 def twoDeeGroundState(n,m):
 	# Note this here!  The boundary conditions are left out of the vector
 	x = np.linspace(0., np.pi, n+2)[1:-1]
@@ -125,17 +127,39 @@ def twoDeeGroundState(n,m):
 	vecx = np.sin(x).astype(complex)
 	vecy = np.sin(y).astype(complex)
 	vec = np.outer(vecx,vecy).flatten()
-	prefactor = sum(np.abs(vec)**2.) ** (-0.5)
-	return prefactor * vec
+	return normalize(vec)
+
 
 def normalize(vec):
 	prefactor = sum(np.abs(vec)**2.) ** (-0.5)
 	return prefactor * vec
 
 
+
+def getEigens(pot, bctype=BoundaryType.REFLECTING, count=8, guess=0.):
+#	ham = getHamiltonian(pot, bctype=bctype)
+#		ham = scipy.sparse.lil_matrix(get1DHam(N,CONST.V_WELL))
+#	if trycomplex:
+#		ham = ham.astype(np.complex64)
+
+	ham = ham.tocsc()
+
+	print('computing eigen')
+	w,v = spla.eigs(ham,count,sigma=guess)
+
+	evals = []
+	epsis = []
+	for wx in w:
+		evals.append(wx)
+	for vx in v.transpose():
+		epsis.append(vx)
+
+	parallelSort(evals,epsis)
+
+	return evals,epsis
+
 n = 20
 m = 20
-dim = n*m
 
 L = 1.
 mass = 1.
@@ -143,9 +167,17 @@ hbar = 1.
 dt = 0.001
 
 vec1 = oneDeeGroundState(n).astype(complex)
-vec2 = twoDeeGroundState(n,15).astype(complex)
-mat1 = getCrankNicolEvo((n,), dt, BoundaryType.REFLECTING)
-mat2 = getCrankNicolEvo((n,15), dt, BoundaryType.REFLECTING)
+vec2 = twoDeeGroundState(n,m).astype(complex)
+#mat1 = getCrankNicolEvo((n,m), dt, BoundaryType.REFLECTING)
+potgrid1 = np.zeros((n,))
+mat1 = getCrankNicolEvo(potgrid1, BoundaryType.REFLECTING, dt)
+
+
+
+#getCrankNicolEvo((n,), dt, BoundaryType.REFLECTING)
+#mat2 = getCrankNicolEvo((n,m), dt, BoundaryType.REFLECTING)
+potgrid2 = np.zeros((n,m))
+mat2 = getCrankNicolEvo(potgrid2, BoundaryType.REFLECTING, dt)
 
 for i in range(50):
 #	print(sum(np.abs(vec1)**2))
