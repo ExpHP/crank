@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
+import scipy.sparse
+import scipy.sparse.linalg as spla
 import scipy.linalg as la
 import itertools
 from enum import Enum
@@ -130,33 +132,30 @@ def twoDeeGroundState(n,m):
 	return normalize(vec)
 
 
+def norm(vec):
+	return sum(np.abs(vec)**2.) ** (0.5)
+
 def normalize(vec):
-	prefactor = sum(np.abs(vec)**2.) ** (-0.5)
-	return prefactor * vec
+	return vec / norm(vec)
 
 
+def parallelSort(a, b):
+	a, b = zip(*sorted(zip(a, b)))
 
-def getEigens(pot, bctype=BoundaryType.REFLECTING, count=8, guess=0.):
-#	ham = getHamiltonian(pot, bctype=bctype)
-#		ham = scipy.sparse.lil_matrix(get1DHam(N,CONST.V_WELL))
-#	if trycomplex:
-#		ham = ham.astype(np.complex64)
 
-	ham = ham.tocsc()
+def getEigens(potgrid, bctype=BoundaryType.REFLECTING, count=8, guess=0.):
+	ham = getHamiltonian(potgrid, bctype=bctype)
+	ham = scipy.sparse.csc_matrix(ham)
 
 	print('computing eigen')
 	w,v = spla.eigs(ham,count,sigma=guess)
 
-	evals = []
-	epsis = []
-	for wx in w:
-		evals.append(wx)
-	for vx in v.transpose():
-		epsis.append(vx)
+	evals = [e for e in w]
+	epsis = [e for e in v.transpose()]
 
 	parallelSort(evals,epsis)
 
-	return evals,epsis
+	return epsis,evals
 
 n = 20
 m = 20
@@ -166,29 +165,24 @@ mass = 1.
 hbar = 1.
 dt = 0.001
 
+bctype = BoundaryType.REFLECTING
+
 vec1 = oneDeeGroundState(n).astype(complex)
 vec2 = twoDeeGroundState(n,m).astype(complex)
-#mat1 = getCrankNicolEvo((n,m), dt, BoundaryType.REFLECTING)
 potgrid1 = np.zeros((n,))
-mat1 = getCrankNicolEvo(potgrid1, BoundaryType.REFLECTING, dt)
+mat1 = getCrankNicolEvo(potgrid1, bctype, dt)
 
-
-
-#getCrankNicolEvo((n,), dt, BoundaryType.REFLECTING)
-#mat2 = getCrankNicolEvo((n,m), dt, BoundaryType.REFLECTING)
 potgrid2 = np.zeros((n,m))
-mat2 = getCrankNicolEvo(potgrid2, BoundaryType.REFLECTING, dt)
+mat2 = getCrankNicolEvo(potgrid2, bctype, dt)
+
+vec3 = getEigens(potgrid2, bctype, count=8)[0][3]
+vec3 = normalize(vec3)
 
 for i in range(50):
-#	print(sum(np.abs(vec1)**2))
 	print(np.abs(vec1)[0:3])
 	vec1 = la.solve(mat1, vec1)
 
-#import sys
-#sys.exit(0)
-
 for i in range(50):
-#	print(sum(np.abs(vec2)**2))
-	print(np.abs(vec2)[0:3])
-	vec2 = la.solve(mat2, vec2)
+	print(np.abs(vec3)[0:3])
+	vec3 = la.solve(mat2, vec3)
 
