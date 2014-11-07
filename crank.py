@@ -85,47 +85,6 @@ def makeLaplacian(dims, dxs, bctype):
 
 	return a
 
-if False:
-	def makeLaplacian(dims, dxs, bctype):
-		assert isinstance(bctype, BoundaryType)
-
-		strides = getStrides(dims)
-		totalSize = strides[-1]
-
-		# for easily working with the matrix, use two sets of coordinates: e.g. [rowy, rowx, coyx, colx]
-		a = np.zeros([*dims]*2, dtype=complex)
-
-		print("DXs:", dxs)
-
-		# value of main diagonal element = -2 * (dx**-2 + dy**-2 + dz**-2 + ...)
-		diagonalValue = -2 * sum([dx**-2 for dx in dxs])
-
-		# iterate over matrix "row"s
-		for rowI in range(totalSize):
-
-			# diagonal elements
-			a[rowI,rowI] = diagonalValue #   -2 * len(dims)
-
-			# coordinates of point corresponding to row i:
-			coords = indexToCoords(rowI, strides)
-
-			# iterate over matrix rows
-			for dimI,c in enumerate(coords):
-
-				# Find index corresponding to changing this coordinate by 1 in either direction
-				targetCoords1 = list(coords);  targetCoords1[dimI] -= 1;
-				targetCoords2 = list(coords);  targetCoords2[dimI] += 1;
-	
-				for targetCoords in (targetCoords1, targetCoords2):
-					# wrap if periodic
-					if bctype is BoundaryType.PERIODIC:
-						targetCoords[dimI] %= dims[dimI]
-
-					if (0 <= targetCoords[dimI] < dims[dimI]):
-						a[rowI, coordsToIndex(targetCoords, strides)] = dxs[dimI]**-2
-
-		return a
-
 
 def getCrankNicolEvo(dims, dt, bctype, pot=None, *, lengths=None, mass=1., hbar=1.):
 	strides = getStrides(dims)
@@ -168,15 +127,6 @@ def twoDeeGroundState(n,m):
 	vec = np.outer(vecx,vecy).flatten()
 	prefactor = sum(np.abs(vec)**2.) ** (-0.5)
 	return prefactor * vec
-
-def flattenTest(n,m):
-	# Note this here!  The boundary conditions are left out of the vector
-	x = np.linspace(0., np.pi, n+2)[1:-1]
-	y = np.linspace(0., np.pi, m+2)[1:-1]
-	vecx = np.sin(x).astype(complex)
-	vecy = np.sin(y).astype(complex)
-	vec = np.outer(vecy,vecx).flatten()
-	return normalize(vec)
 
 def normalize(vec):
 	prefactor = sum(np.abs(vec)**2.) ** (-0.5)
