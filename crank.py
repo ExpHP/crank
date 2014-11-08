@@ -99,24 +99,35 @@ def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
 	return -(hbar*hbar)/(2*m) * makeLaplacian(dims,dxs,bctype) + np.diag(potvec)
 
 
-def getCrankNicolEvo(potgrid, bctype, dt, *, lengths=None, mass=1., hbar=1.):
+class getCrankNicolEvo:
 
-	strides = getStrides(potgrid.shape)
+	def __init__(self, potgrid, bctype, dt, *, lengths=None, mass=1., hbar=1.):
+		strides = getStrides(potgrid.shape)
 
-	assert isinstance(bctype, BoundaryType)
-	assert len(potgrid.flatten()) == strides[-1]
+		assert isinstance(bctype, BoundaryType)
+		assert len(potgrid.flatten()) == strides[-1]
 
-	ham = getHamiltonian(potgrid, bctype, lengths=lengths, mass=mass, hbar=hbar)
+		ham = getHamiltonian(potgrid, bctype, lengths=lengths, mass=mass, hbar=hbar)
 
-	matL = np.eye(strides[-1]) - (dt/(2.j*hbar)) * ham
-	matR = np.eye(strides[-1]) + (dt/(2.j*hbar)) * ham
+		self.matL = np.eye(strides[-1]) - (dt/(2.j*hbar)) * ham
+		self.matR = np.eye(strides[-1]) + (dt/(2.j*hbar)) * ham
 
-	matL = scipy.sparse.csc_matrix(matL)
-	matR = scipy.sparse.csc_matrix(matR)
+		self.matL = scipy.sparse.csc_matrix(self.matL)
+		self.matR = scipy.sparse.csc_matrix(self.matR)
 
-	rsolver = spla.factorized(matR)
+		rsolver = spla.factorized(self.matR)
 
-	return lambda vec: matL.dot(rsolver(vec))
+		self._evofunc = lambda vec: self.matL.dot(rsolver(vec))
+		self.dt      = dt
+		self.hbar    = hbar
+		self.mass    = mass
+		self.lengths = lengths
+		self.potgrid = potgrid
+		self.dims    = potgrid.shape
+		self.bctype  = bctype
+
+	def __call__(self, vec):
+		return self._evofunc(vec)
 
 
 
@@ -193,4 +204,3 @@ for i in range(50):
 for i in range(1000):
 #	print(np.abs(vec3)[0:3])
 	vec3 = evo2(vec3)
-
