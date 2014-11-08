@@ -4,6 +4,7 @@ import scipy.sparse
 import scipy.sparse.linalg as spla
 import scipy.linalg as la
 import itertools
+import time
 from enum import Enum
 
 # TODO: Model
@@ -56,8 +57,6 @@ def makeLaplacian(dims, dxs, bctype):
 	# matrix has 1 row for each point in space
 	a = np.zeros((totalSize,totalSize), dtype=complex)
 
-	print("DXs:", dxs)
-
 	# value of main diagonal element = -2 * (dx**-2 + dy**-2 + dz**-2 + ...)
 	diagonalValue = -2 * sum([dx**-2 for dx in dxs])
 
@@ -87,6 +86,7 @@ def makeLaplacian(dims, dxs, bctype):
 
 	return a
 
+
 def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
 	dims = potgrid.shape
 	potvec = potgrid.flatten()
@@ -97,6 +97,7 @@ def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
 	# XXX (dims[i]-1) will not apply for PERIODIC --- or will it
 	dxs = [lengths[i] / (dims[i]-1) for i in range(len(dims))]
 	return -(hbar*hbar)/(2*m) * makeLaplacian(dims,dxs,bctype) + np.diag(potvec)
+
 
 def getCrankNicolEvo(potgrid, bctype, dt, *, lengths=None, mass=1., hbar=1.):
 
@@ -109,9 +110,14 @@ def getCrankNicolEvo(potgrid, bctype, dt, *, lengths=None, mass=1., hbar=1.):
 
 	matL = np.eye(strides[-1]) - (dt/(2.j*hbar)) * ham
 	matR = np.eye(strides[-1]) + (dt/(2.j*hbar)) * ham
-	matRInv = la.inv(matR)
 
-	return matRInv.dot(matL)
+	matL = scipy.sparse.csc_matrix(matL)
+	matR = scipy.sparse.csc_matrix(matR)
+
+	rsolver = spla.factorized(matR)
+
+	return lambda vec: matL.dot(rsolver(vec))
+
 
 
 def oneDeeGroundState(n):
@@ -147,7 +153,6 @@ def getEigens(potgrid, bctype=BoundaryType.REFLECTING, count=8, guess=0.):
 	ham = getHamiltonian(potgrid, bctype=bctype)
 	ham = scipy.sparse.csc_matrix(ham)
 
-	print('computing eigen')
 	w,v = spla.eigs(ham,count,sigma=guess)
 
 	evals = [e for e in w]
@@ -169,20 +174,23 @@ bctype = BoundaryType.REFLECTING
 
 vec1 = oneDeeGroundState(n).astype(complex)
 vec2 = twoDeeGroundState(n,m).astype(complex)
+
 potgrid1 = np.zeros((n,))
-mat1 = getCrankNicolEvo(potgrid1, bctype, dt)
+evo1 = getCrankNicolEvo(potgrid1, bctype, dt)
 
 potgrid2 = np.zeros((n,m))
-mat2 = getCrankNicolEvo(potgrid2, bctype, dt)
+evo2 = getCrankNicolEvo(potgrid2, bctype, dt)
 
 vec3 = getEigens(potgrid2, bctype, count=8)[0][3]
+#vec3+= getEigens(potgrid2, bctype, count=8)[0][4]
 vec3 = normalize(vec3)
 
-for i in range(50):
-	print(np.abs(vec1)[0:3])
-	vec1 = la.solve(mat1, vec1)
 
 for i in range(50):
-	print(np.abs(vec3)[0:3])
-	vec3 = la.solve(mat2, vec3)
+#	print(np.abs(vec1)[0:3])
+	vec1 = evo1(vec1)
+
+for i in range(1000):
+#	print(np.abs(vec3)[0:3])
+	vec3 = evo2(vec3)
 
