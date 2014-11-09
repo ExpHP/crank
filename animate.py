@@ -29,13 +29,11 @@ def animateTo(outfilename, psi, evo, frameCount, frameStep=1):
 
 	prob = np.power(np.absolute(psi),2)
 
-	ax1 = fig.add_subplot(121, aspect='equal', autoscale_on=False,
-	                      xlim=(0,evo.dims[1]), ylim=(0,evo.dims[0]+1))
-	ax2 = fig.add_subplot(122, aspect='equal', autoscale_on=False,
-	                      xlim=(0,evo.dims[1]), ylim=(0,evo.dims[0]+1))
+	ax1 = fig.add_subplot(121, aspect='equal')
+	ax2 = fig.add_subplot(122, aspect='equal')
 
-	img1 = ax1.imshow(prob.reshape(evo.dims))
-	img2 = ax2.imshow(colorize(psi.reshape(evo.dims)))
+	img1 = ax1.imshow(prob.reshape(evo.dims), interpolation='nearest')
+	img2 = ax2.imshow(colorize(psi.reshape(evo.dims)), interpolation='nearest')
 	time_text = ax1.text(0.02, 0.95, '', transform=ax1.transAxes)
 
 	def update(args):
@@ -52,7 +50,7 @@ def animateTo(outfilename, psi, evo, frameCount, frameStep=1):
 
 	def init():
 		print('initializing')
-		return update((0, psi.reshape(evo.dims)))
+		return update((0, psi))
 
 	print('make datagen')
 	datagen = frameDataGen(psi, evo, frameCount, frameStep)
