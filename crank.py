@@ -7,25 +7,9 @@ import itertools
 import time
 from enum import Enum
 
-# TODO: Model
-#   model.getPsi      - psi in vector form
-#   model.getPsiMap   - psi in 2D form
-#   model.step(nstep) - advance by nstep steps
-#   model.getTime
-#   model.getMapShape
-
-
-# evo.
-# evo.dimensions
-# evo.step()
-
-# 
-
 class BoundaryType(Enum):
 	REFLECTING = 1
 	PERIODIC   = 2
-
-
 
 #---------
 # Converting between a flattened matrix index and multidimensional coordinates,
@@ -141,11 +125,11 @@ def oneDeeGroundState(n):
 
 def twoDeeGroundState(n,m):
 	# Note this here!  The boundary conditions are left out of the vector
-	x = np.linspace(0., np.pi, n+2)[1:-1]
-	y = np.linspace(0., np.pi, m+2)[1:-1]
-	vecx = np.sin(x).astype(complex)
+	y = np.linspace(0., np.pi, n+2)[1:-1]
+	x = np.linspace(0., np.pi, m+2)[1:-1]
 	vecy = np.sin(y).astype(complex)
-	vec = np.outer(vecx,vecy).flatten()
+	vecx = np.sin(x).astype(complex)
+	vec = np.outer(vecy,vecx).flatten()
 	return normalize(vec)
 
 
@@ -173,34 +157,7 @@ def getEigens(potgrid, bctype=BoundaryType.REFLECTING, count=8, guess=0.):
 
 	return epsis,evals
 
-n = 20
-m = 20
-
-L = 1.
-mass = 1.
-hbar = 1.
-dt = 0.001
-
-bctype = BoundaryType.REFLECTING
-
-vec1 = oneDeeGroundState(n).astype(complex)
-vec2 = twoDeeGroundState(n,m).astype(complex)
-
-potgrid1 = np.zeros((n,))
-evo1 = getCrankNicolEvo(potgrid1, bctype, dt)
-
-potgrid2 = np.zeros((n,m))
-evo2 = getCrankNicolEvo(potgrid2, bctype, dt)
-
-vec3 = getEigens(potgrid2, bctype, count=8)[0][3]
-#vec3+= getEigens(potgrid2, bctype, count=8)[0][4]
-vec3 = normalize(vec3)
 
 
-for i in range(50):
-#	print(np.abs(vec1)[0:3])
-	vec1 = evo1(vec1)
-
-for i in range(1000):
-#	print(np.abs(vec3)[0:3])
-	vec3 = evo2(vec3)
+def donutFunc(r, centerRadius, halfWidth):
+	return max(0, 1 - (r - centerRadius)**2 / halfWidth**2)

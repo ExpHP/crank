@@ -1,4 +1,7 @@
+
 from colorsys import hls_to_rgb
+import numpy as np
+import math
 
 def colorize(z):
     r = np.abs(z)
