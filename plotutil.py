@@ -17,5 +17,5 @@ def colorize(z):
 
     c = np.vectorize(hls_to_rgb) (h,l,s) # --> tuple
     c = np.array(c)  # -->  array of (3,n,m) shape, but need (n,m,3)
-    c = c.swapaxes(0,2) 
+    c = c.transpose(1,2,0)
     return c
