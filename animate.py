@@ -8,15 +8,12 @@ import time
 from plotutil import *
 
 def frameDataGen(psi, evo, frameCount, frameStep=1):
-	yield 0, psi
-
-	print(psi)
-	print(psi.shape)
+	yield 0, psi, evo
 
 	for frameI in range(1,frameCount):
 		for _ in range(frameStep):
 			psi = evo(psi)
-		yield frameI*frameStep, psi
+		yield frameI*frameStep, psi, evo
 
 ANI_FIG_OFFSET = 5000
 NEXT_ANI_FIG = ANI_FIG_OFFSET
@@ -32,33 +29,33 @@ def animateTo(outfilename, psi, evo, frameCount, frameStep=1):
 	ax1 = fig.add_subplot(121, aspect='equal')
 	ax2 = fig.add_subplot(122, aspect='equal')
 
-	img1 = ax1.imshow(prob.reshape(evo.dims), interpolation='nearest')
-	img2 = ax2.imshow(colorize(psi.reshape(evo.dims)), interpolation='nearest')
+	psigrid = psi.reshape(evo.dims)
+	img1 = makeProbPlot(ax1, psigrid, evo)
+	img2 = makePhasePlot(ax2, psigrid, evo)
 	time_text = ax1.text(0.02, 0.95, '', transform=ax1.transAxes)
 
+	fig.subplots_adjust(left=0,bottom=0,top=1,right=1,wspace=None,hspace=None)
+
 	def update(args):
-		frame, psi = args
+		frame, psi, evo = args
 		print('update: frame {}'.format(frame))
 
-		psi = psi.reshape(evo.dims)
-		prob = np.power(np.absolute(psi),2)
+		psigrid = psi.reshape(evo.dims)
+		updateProbPlot(img1, psigrid, evo)
+		updatePhasePlot(img2, psigrid, evo)
 
-		img1.set_array(prob)
-		img2.set_array(colorize(psi))
-		time_text.set_text('t = {}'.format(frame))
+#		time_text.set_text('t = {}'.format(frame))
 		return [img1, img2, time_text]
 
 	def init():
 		print('initializing')
-		return update((0, psi))
 
-	print('make datagen')
 	datagen = frameDataGen(psi, evo, frameCount, frameStep)
-	print('done datagen')
 	anim = animation.FuncAnimation(fig, update,
 	           init_func=init, frames=datagen, interval=5,
 	           save_count=frameCount, blit=True) # nframes-1
-	anim.save(outfilename, fps=60, extra_args=['-vcodec', 'libx264'])#, '-vb', '10000K'])
+#	anim.save(outfilename, fps=60, extra_args=['-vcodec', 'libx264'])#, '-vb', '10000K'])
 #	anim.save(outfilename, fps=60, extra_args=['-vcodec', 'libx264', '-vb', '10000K'])
-#	anim.save(outfilename, writer='imagemagick', fps=60)
+#	anim.save(outfilename, writer='imagemagick', extra_args=['-size', '{}x{}'.format(*outDims)], fps=30)
+	anim.save(outfilename, writer='imagemagick', fps=30)
 #	plt.show()
