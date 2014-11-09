@@ -78,9 +78,13 @@ def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
 	if lengths is None:   # assume all lengths are 1
 		lengths = [1. for d in dims]
 
-	# XXX (dims[i]-1) will not apply for PERIODIC --- or will it
-	dxs = [lengths[i] / (dims[i]-1) for i in range(len(dims))]
-	return -(hbar*hbar)/(2*m) * makeLaplacian(dims,dxs,bctype) + np.diag(potvec)
+	if bctype is BoundaryType.REFLECTING:
+		dxs = [lengths[i] / (dims[i]-1) for i in range(len(dims))]
+	elif bctype is BoundaryType.PERIODIC:
+		dxs = [lengths[i] / dims[i] for i in range(len(dims))]
+	else: assert False
+
+	return -(hbar*hbar)/(2*mass) * makeLaplacian(dims,dxs,bctype) + np.diag(potvec)
 
 
 class getCrankNicolEvo:
@@ -156,8 +160,6 @@ def getEigens(potgrid, bctype=BoundaryType.REFLECTING, count=8, guess=0.):
 	parallelSort(evals,epsis)
 
 	return epsis,evals
-
-
 
 def donutFunc(r, centerRadius, halfWidth):
 	return max(0, 1 - (r - centerRadius)**2 / halfWidth**2)

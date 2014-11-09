@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
 import time
-import fixani
+#import fixani
 from plotutil import *
 
 def frameDataGen(psi, evo, frameCount, frameStep=1):
@@ -42,13 +42,12 @@ def animateTo(outfilename, psi, evo, frameCount, frameStep=1):
 		frame, psi = args
 		print('update: frame {}'.format(frame))
 
-		print(psi.shape)
 		psi = psi.reshape(evo.dims)
 		prob = np.power(np.absolute(psi),2)
+
 		img1.set_array(prob)
 		img2.set_array(colorize(psi))
 		time_text.set_text('t = {}'.format(frame))
-		time.sleep(0)
 		return [img1, img2, time_text]
 
 	def init():

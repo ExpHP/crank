@@ -2,6 +2,8 @@ import itertools
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import math
+import cmath
 
 from crank import *
 from util import *
@@ -30,17 +32,28 @@ m = 50
 L = 1.
 mass = 1.
 hbar = 1.
-dt = 0.01
+dt = 0.0001
 #dt = 0.1
 
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+def twoDeePlaneWave(shape, xorder, yorder):
+	n,m = shape
+#	y = np.linspace(0., np.pi, n+2)[1:-1]
+#	x = np.linspace(0., np.pi, m+2)[1:-1]
+	y = np.linspace(0., 1., n)
+	x = np.linspace(0., 1., m)
+	vecy = np.exp(2j * np.pi * yorder * y).astype(complex)
+	vecx = np.exp(2j * np.pi * xorder * x).astype(complex)
+	vec = np.outer(vecy,vecx).flatten()
+	return normalize(vec)
 
-boxes = makeRandomBoxes(6, 0.2)
-
-plt.imshow(potgrid)
-plt.show()
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
+#
+#boxes = makeRandomBoxes(6, 0.2)
+#
+#plt.imshow(potgrid)
+#plt.show()
 
 bctype = BoundaryType.REFLECTING
 
@@ -58,15 +71,19 @@ vec3+= getEigens(potgrid2, bctype, count=8)[0][4]
 vec3 = normalize(vec3)
 
 
-
 for i in range(n):
 	for j in range(m):
 			ry = float(j)/n - 0.5
 			rx = float(i)/m - 0.5
 			r = (rx*rx + ry*ry) ** 0.5
 #			vec3[i*n+j] = donutFunc(r, 0.2, 0.1)
-			vec3[i*n+j] = donutFunc(r, 0, 0.2)
+			vec3[i*n+j] = donutFunc(r, 0, 0.2) * cmath.exp(3j*math.pi*r)
+#			vec3[i*n+j] = donutFunc(r, 0, 0.2) * cmath.exp(3j*math.pi*rx)
 vec3 = normalize(vec3)
+print(vec3.dtype)
+
+evo2 = getCrankNicolEvo(potgrid2, BoundaryType.PERIODIC, dt)
+vec3 = twoDeePlaneWave((n,m), 3, 0)
 
 #vec3 = np.zeros(n*m)
 #vec3[len(vec3)/2+35]=1.
@@ -84,4 +101,6 @@ import cProfile
 import animate
 #animate.animateTo("cool.mp4", vec3, evo2, 100, 10)
 #animate.animateTo("cool3.gif", vec3, evo2, 50, 10)
-cProfile.run("animate.animateTo('ball.mp4', vec3, evo2, 1000, 5)", sort='tottime')
+#animate.animateTo('ballp.mp4', vec3, evo2, 100, 5)
+animate.animateTo('plane.mp4', vec3, evo2, 100, 5)
+#cProfile.run("animate.animateTo('ball.mp4', vec3, evo2, 1000, 5)", sort='tottime')
