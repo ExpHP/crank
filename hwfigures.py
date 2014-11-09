@@ -7,6 +7,7 @@ import cmath
 
 from crank import *
 from util import *
+from plotutil import *
 import animate
 
 #  Important figures
@@ -26,8 +27,8 @@ import animate
 #  8. (PERIODIC) Diffraction of a wave packet entering a small gap  -->  |========  ========|
 
 
-n = 50
-m = 50
+n = 25
+m = 25
 
 L = 1.
 mass = 1.
@@ -73,17 +74,17 @@ vec3 = normalize(vec3)
 
 for i in range(n):
 	for j in range(m):
-			ry = float(j)/n - 0.5
-			rx = float(i)/m - 0.5
+			ry = float(i)/n - 0.5
+			rx = float(j)/m - 0.5
 			r = (rx*rx + ry*ry) ** 0.5
 #			vec3[i*n+j] = donutFunc(r, 0.2, 0.1)
-			vec3[i*n+j] = donutFunc(r, 0, 0.2) * cmath.exp(3j*math.pi*r)
-#			vec3[i*n+j] = donutFunc(r, 0, 0.2) * cmath.exp(3j*math.pi*rx)
+#			vec3[i*n+j] = donutFunc(r, 0, 0.2) * cmath.exp(3j*math.pi*r)
+			vec3[i*n+j] = donutFunc(r, 0, 0.2) * cmath.exp(3j*math.pi*ry)
 vec3 = normalize(vec3)
 print(vec3.dtype)
 
-evo2 = getCrankNicolEvo(potgrid2, BoundaryType.PERIODIC, dt)
-vec3 = twoDeePlaneWave((n,m), 3, 0)
+#evo2 = getCrankNicolEvo(potgrid2, BoundaryType.PERIODIC, dt)
+#vec3 = twoDeePlaneWave((n,m), 3, 0)
 
 #vec3 = np.zeros(n*m)
 #vec3[len(vec3)/2+35]=1.
@@ -100,7 +101,8 @@ import cProfile
 
 import animate
 #animate.animateTo("cool.mp4", vec3, evo2, 100, 10)
-#animate.animateTo("cool3.gif", vec3, evo2, 50, 10)
+#animate.animateTo("movingBall.gif", vec3, evo2, (PhasePlotter(), ProbPlotter(), PhasePlotter()), 50, 5)
+animate.animateTo("movingBall.gif", vec3, evo2, (ProbPlotter(),), 50, 5)
 #animate.animateTo('ballp.mp4', vec3, evo2, 100, 5)
-animate.animateTo('plane.mp4', vec3, evo2, 100, 5)
+#animate.animateTo('plane.mp4', vec3, evo2, 100, 5)
 #cProfile.run("animate.animateTo('ball.mp4', vec3, evo2, 1000, 5)", sort='tottime')

@@ -5,28 +5,48 @@ import math
 
 class WavePlotter:
 	def plot(self, ax, psigrid, evo):
+		''' Produces a plot on ax.  Returns the produced drawable, and records it for later modification through update(). '''
 		raise NotImplementedError
-	def updateAnim(self, psigrid, evo):
+	def update(self, psigrid, evo):
+		''' Updates the plot from the most recent call to plot() with new data, and returns a list of drawables to blit. '''
 		raise NotImplementedError
 
 #---------------
 
-def makeProbPlot(ax, psigrid, evo):
-	prob = np.power(np.absolute(psigrid),2)
-	return ax.imshow(prob, interpolation='nearest')
+class ProbPlotter(WavePlotter):
+	def __init__(self):
+		self.img = None
 
-def updateProbPlot(img, psigrid, evo):
-	prob = np.power(np.absolute(psigrid),2)
-	img.set_array(prob)
-	img.set_clim(0., prob.max()**0.90)
+	def plot(self, ax, psigrid, evo):
+		prob     = np.power(np.absolute(psigrid),2)
+		self.img = ax.imshow(prob, interpolation='nearest')
+		return self.img
+
+	def update(self, psigrid, evo):
+		if self.img is None:
+			raise RuntimeError("No existing plot to update")
+
+		prob = np.power(np.absolute(psigrid),2)
+		self.img.set_array(prob)
+		self.img.set_clim(0., prob.max()**0.90)
+		return [self.img]
 
 #---------------
-	
-def makePhasePlot(ax, psigrid, evo):
-	return ax.imshow(getPhaseRGB(psigrid), interpolation='nearest')
-	
-def updatePhasePlot(img, psigrid, evo):
-	img.set_array(getPhaseRGB(psigrid))
+
+class PhasePlotter(WavePlotter):
+	def __init__(self):
+		self.img = None
+
+	def plot(self, ax, psigrid, evo):
+		self.img = ax.imshow(getPhaseRGB(psigrid), interpolation='nearest')
+		return self.img
+
+	def update(self, psigrid, evo):
+		if self.img is None:
+			raise RuntimeError("No existing plot to update")
+
+		self.img.set_array(getPhaseRGB(psigrid))
+		return [self.img]
 
 def getPhaseRGB(z):
 	h = (np.angle(z) + math.pi)  / (2 * math.pi) + 0.5

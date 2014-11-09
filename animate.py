@@ -18,21 +18,27 @@ def frameDataGen(psi, evo, frameCount, frameStep=1):
 ANI_FIG_OFFSET = 5000
 NEXT_ANI_FIG = ANI_FIG_OFFSET
 
+def getSubplotAxes(fig, rows, cols):
+	axes = []
+	for i in range(1, rows*cols+1):
+		axes.append(fig.add_subplot(rows, cols, i))
+	return axes
+
 # evo is a function that evolves psi by dt
-def animateTo(outfilename, psi, evo, frameCount, frameStep=1):
+def animateTo(outfilename, psi, evo, plotters, frameCount, frameStep=1):
 	global NEXT_ANI_FIG
 	fig = plt.figure(NEXT_ANI_FIG)
 	NEXT_ANI_FIG += 1
 
-	prob = np.power(np.absolute(psi),2)
-
-	ax1 = fig.add_subplot(121, aspect='equal')
-	ax2 = fig.add_subplot(122, aspect='equal')
+	axes = getSubplotAxes(fig, 1, len(plotters))
+	for ax in axes:
+		ax.set_aspect('equal')
 
 	psigrid = psi.reshape(evo.dims)
-	img1 = makeProbPlot(ax1, psigrid, evo)
-	img2 = makePhasePlot(ax2, psigrid, evo)
-	time_text = ax1.text(0.02, 0.95, '', transform=ax1.transAxes)
+	for i,plotter in enumerate(plotters):
+		plotter.plot(axes[i], psigrid, evo)
+
+#	time_text = ax1.text(0.02, 0.95, '', transform=ax1.transAxes)
 
 	fig.subplots_adjust(left=0,bottom=0,top=1,right=1,wspace=None,hspace=None)
 
@@ -40,12 +46,13 @@ def animateTo(outfilename, psi, evo, frameCount, frameStep=1):
 		frame, psi, evo = args
 		print('update: frame {}'.format(frame))
 
-		psigrid = psi.reshape(evo.dims)
-		updateProbPlot(img1, psigrid, evo)
-		updatePhasePlot(img2, psigrid, evo)
+		drawables = []
 
-#		time_text.set_text('t = {}'.format(frame))
-		return [img1, img2, time_text]
+		psigrid = psi.reshape(evo.dims)
+		for plotter in plotters:
+			drawables += plotter.update(psigrid, evo)
+
+		return drawables
 
 	def init():
 		print('initializing')
