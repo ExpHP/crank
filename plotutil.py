@@ -11,6 +11,12 @@ class WavePlotter:
 		''' Updates the plot from the most recent call to plot() with new data, and returns a list of drawables to blit. '''
 		raise NotImplementedError
 
+def clearAxisLabels(ax):
+	ax.set_xlabel('')
+	ax.set_ylabel('')
+	ax.set_xticklabels([])
+	ax.set_yticklabels([])
+
 #---------------
 
 class ProbPlotter(WavePlotter):
@@ -18,6 +24,7 @@ class ProbPlotter(WavePlotter):
 		self.img = None
 
 	def plot(self, ax, psigrid, evo):
+		clearAxisLabels(ax)
 		prob     = np.power(np.absolute(psigrid),2)
 		self.img = ax.imshow(prob, interpolation='nearest')
 		return self.img
@@ -38,6 +45,7 @@ class PhasePlotter(WavePlotter):
 		self.img = None
 
 	def plot(self, ax, psigrid, evo):
+		clearAxisLabels(ax)
 		self.img = ax.imshow(getPhaseRGB(psigrid), interpolation='nearest')
 		return self.img
 

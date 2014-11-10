@@ -47,13 +47,11 @@ def makeLaplacian(dims, dxs, bctype):
 	# iterate over matrix rows
 	for rowI in range(totalSize):
 
-		# diagonal elements
-		a[rowI,rowI] = diagonalValue #   -2 * len(dims)
+		a[rowI,rowI] = diagonalValue
 
-		# coordinates of point corresponding to row i:
 		coords = indexToCoords(rowI, strides)
 
-		# iterate over matrix rows
+		# Iterate over dimensions
 		for dimI,c in enumerate(coords):
 
 			# Find index corresponding to changing this coordinate by 1 in either direction
@@ -61,7 +59,7 @@ def makeLaplacian(dims, dxs, bctype):
 			targetCoords2 = list(coords);  targetCoords2[dimI] += 1;
 
 			for targetCoords in (targetCoords1, targetCoords2):
-				# wrap if periodic
+				# Wrap if periodic
 				if bctype is BoundaryType.PERIODIC:
 					targetCoords[dimI] %= dims[dimI]
 
