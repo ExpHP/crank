@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
 import time
-#import fixani
 from plotutil import *
 
 def frameDataGen(psi, evo, frameCount, frameStep=1):
@@ -30,7 +29,7 @@ def figsizeForPlotters(plotters, height, space):
 	return width, height
 
 # evo is a function that evolves psi by dt
-def animateTo(outfilename, psi, evo, plotters, frameCount, frameStep=1, dpi=100):
+def timeEvoAnimation(psi, evo, plotters, frameCount, frameStep=1, dpi=100, interval=50):
 	global NEXT_ANI_FIG
 	fig = plt.figure(NEXT_ANI_FIG)
 	NEXT_ANI_FIG += 1
@@ -55,8 +54,6 @@ def animateTo(outfilename, psi, evo, plotters, frameCount, frameStep=1, dpi=100)
 		frame, psi, evo = args
 		psigrid = psi.reshape(evo.dims)
 
-		print('update: frame {}'.format(frame))
-
 		drawables = []
 		for plotter in plotters:
 			drawables += plotter.update(psigrid, evo)
@@ -68,10 +65,11 @@ def animateTo(outfilename, psi, evo, plotters, frameCount, frameStep=1, dpi=100)
 
 	datagen = frameDataGen(psi, evo, frameCount, frameStep)
 	anim = animation.FuncAnimation(fig, update,
-	           init_func=init, frames=datagen, interval=5,
+	           init_func=init, frames=datagen, interval=interval,
 	           save_count=frameCount, blit=True) # nframes-1
 #	anim.save(outfilename, fps=60, extra_args=['-vcodec', 'libx264'])#, '-vb', '10000K'])
 #	anim.save(outfilename, fps=60, extra_args=['-vcodec', 'libx264', '-vb', '10000K'])
-	anim.save(outfilename, writer='imagemagick', fps=30, dpi=dpi)
+#	anim.save(outfilename, writer='imagemagick', fps=30, dpi=dpi)
 #	anim.save(outfilename, writer='imagemagick', fps=30)
 #	plt.show()
+	return anim
