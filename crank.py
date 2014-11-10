@@ -7,6 +7,9 @@ import itertools
 import time
 from enum import Enum
 
+from pylibs.debug import memlimit
+memlimit(2048)
+
 class BoundaryType(Enum):
 	REFLECTING = 1
 	PERIODIC   = 2
@@ -39,7 +42,7 @@ def makeLaplacian(dims, dxs, bctype):
 	totalSize = strides[-1]
 
 	# matrix has 1 row for each point in space
-	a = np.zeros((totalSize,totalSize), dtype=complex)
+	a = scipy.sparse.dok_matrix((totalSize,totalSize), dtype=complex)
 
 	# value of main diagonal element = -2 * (dx**-2 + dy**-2 + dz**-2 + ...)
 	diagonalValue = -2 * sum([dx**-2 for dx in dxs])
@@ -66,8 +69,7 @@ def makeLaplacian(dims, dxs, bctype):
 				if (0 <= targetCoords[dimI] < dims[dimI]):
 					a[rowI, coordsToIndex(targetCoords, strides)] = dxs[dimI]**-2
 
-	return a
-
+	return a.tocsc()
 
 def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
 	dims = potgrid.shape
@@ -82,7 +84,7 @@ def getHamiltonian(potgrid, bctype, *, lengths=None, mass=1., hbar=1):
 		dxs = [lengths[i] / dims[i] for i in range(len(dims))]
 	else: assert False
 
-	return -(hbar*hbar)/(2*mass) * makeLaplacian(dims,dxs,bctype) + np.diag(potvec)
+	return -(hbar*hbar)/(2*mass) * makeLaplacian(dims,dxs,bctype) + scipy.sparse.spdiags(potvec,0,len(potvec),len(potvec))
 
 
 class getCrankNicolEvo:
@@ -95,8 +97,8 @@ class getCrankNicolEvo:
 
 		ham = getHamiltonian(potgrid, bctype, lengths=lengths, mass=mass, hbar=hbar)
 
-		self.matL = np.eye(strides[-1]) - (dt/(2.j*hbar)) * ham
-		self.matR = np.eye(strides[-1]) + (dt/(2.j*hbar)) * ham
+		self.matL = scipy.sparse.eye(strides[-1]) - (dt/(2.j*hbar)) * ham
+		self.matR = scipy.sparse.eye(strides[-1]) + (dt/(2.j*hbar)) * ham
 
 		self.matL = scipy.sparse.csc_matrix(self.matL)
 		self.matR = scipy.sparse.csc_matrix(self.matR)
@@ -114,8 +116,6 @@ class getCrankNicolEvo:
 
 	def __call__(self, vec):
 		return self._evofunc(vec)
-
-
 
 def oneDeeGroundState(n):
 	# Note this here!  The boundary conditions are left out of the vector
