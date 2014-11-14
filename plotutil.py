@@ -25,6 +25,7 @@ class ProbPlotter(WavePlotter):
 
 	def plot(self, ax, psigrid, evo):
 		clearAxisLabels(ax)
+		ax.set_title('Probability')
 		prob     = np.power(np.absolute(psigrid),2)
 		self.img = ax.imshow(prob, interpolation='nearest')
 		return self.img
@@ -35,7 +36,7 @@ class ProbPlotter(WavePlotter):
 
 		prob = np.power(np.absolute(psigrid),2)
 		self.img.set_array(prob)
-		self.img.set_clim(0., prob.max()**0.90)
+		self.img.set_clim(0., prob.max()**0.97)
 		return [self.img]
 
 #---------------
@@ -46,6 +47,7 @@ class PhasePlotter(WavePlotter):
 
 	def plot(self, ax, psigrid, evo):
 		clearAxisLabels(ax)
+		ax.set_title('Phase')
 		self.img = ax.imshow(getPhaseRGB(psigrid), interpolation='nearest')
 		return self.img
 

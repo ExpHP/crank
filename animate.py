@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
 import time
+import itertools
 from plotutil import *
 
 def frameDataGen(psis, evo, frameCount, frameStep=1):
@@ -38,13 +39,13 @@ def getSubplotAxes(fig, rows, cols):
 	return axes
 
 # Takes sizes in "inches"
-def figsizeForPlotters(psis, plotters, plotsize, hspace, vspace):
-	w = (hspace+plotsize)*len(plotters) - hspace
-	h = (vspace+plotsize)*len(psis) - vspace
+def figsizeForPlotters(rows, cols, plotsize, hspace, vspace):
+	w = (hspace+plotsize)*cols - hspace
+	h = (vspace+plotsize)*rows - vspace
 	return w, h
 
 # evo is a function that evolves psi by dt
-def timeEvoAnimation(psis, evo, plotterClasses, frameCount, frameStep=1, dpi=100, interval=50):
+def timeEvoAnimation(psis, evo, plotterClasses, frameCount, frameStep=1, dpi=100, interval=50, flip=False):
 
 	global NEXT_ANI_FIG
 	fig = plt.figure(NEXT_ANI_FIG)
@@ -53,38 +54,58 @@ def timeEvoAnimation(psis, evo, plotterClasses, frameCount, frameStep=1, dpi=100
 	psis = list(psis)
 	plotterClasses = list(plotterClasses)
 
-	figsize = figsizeForPlotters(psis, plotterClasses, 3., 0.2, 0.1)
+	if flip:
+		axrows = len(plotterClasses)
+		axcols = len(psis)
+	else:
+		axrows = len(psis)
+		axcols = len(plotterClasses)
+
+	psiIndices = []
+	plotterIndices = []
+	for row in range(axrows):
+		psiIndices.append([])
+		plotterIndices.append([])
+		for col in range(axcols):
+			if flip: psiIndex = col; plotterIndex = row
+			else:    psiIndex = row; plotterIndex = col
+
+			psiIndices[-1].append(psiIndex)
+			plotterIndices[-1].append(plotterIndex)
+
+	figsize = figsizeForPlotters(axrows, axcols, 3., 0.2, 0.1)
 	fig.set_size_inches(figsize)
 
-	axes = getSubplotAxes(fig, len(psis), len(plotterClasses))
+	axes = getSubplotAxes(fig, axrows, axcols)
 	for ax in iter2D(axes):
 		ax.set_aspect('equal')
 
 	plotters = []
 	blankgrid = np.ones(evo.dims, dtype=complex) 
-	for psiI, ax in enumerate(axes):
+	for row in range(axrows):
 		rowplotters = []
-		for plotterI, ax in enumerate(row):
+		for col in range(axcols):
+			ax = axes[row][col]
+			plotterI = plotterIndices[row][col]
 			plotter = plotterClasses[plotterI]() # Instantiate
 			plotter.plot(ax, blankgrid, evo)
 			rowplotters.append(plotter)
 		plotters.append(rowplotters)
-#		psigrid = psis[psiI].reshape(evo.dims)
-#		plotters[plotterI].plot(ax, psigrid, evo)
 
 #	time_text = ax1.text(0.02, 0.95, '', transform=ax1.transAxes)
 
-
 #	fig.subplots_adjust(left=0,bottom=0,top=1,right=1,wspace=None,hspace=None)
+	fig.tight_layout()
 
 	def update(args):
 		frame, psis, evo = args
 		psigrids = [psi.reshape(evo.dims) for psi in psis]
 
 		drawables = []
-		for rowI, psigrid in enumerate(psigrids):
-			for plotter in plotters[rowI]:
-				drawables += plotter.update(psigrid, evo)
+		for row, col in itertools.product(range(axrows), range(axcols)):
+			psigrid = psigrids[psiIndices[row][col]]
+			plotter = plotters[row][col]
+			drawables += plotter.update(psigrid, evo)
 
 		return drawables
 
