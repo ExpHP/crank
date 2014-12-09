@@ -1,0 +1,53 @@
+
+#------------------------------------
+# Temporary files
+
+# Vim
+.*.swp
+
+#------------------------------------
+# Names almost always belonging to directories that shouldn't be versioned
+tmp/
+temp/
+
+#------------------------------------
+
+# ctags
+tags
+
+#------------------------------------
+# Python precompiled files
+*.pyc
+__pycache__/
+
+# c/c++ object files
+*.o
+*.slo
+*.lo
+*.obj
+*.elf
+
+# c/c++ executables
+a.out
+*.exe
+*.i*86
+*.x86_64
+
+# c/c++ precompiled headers
+*.gch
+*.pch
+
+# c/c++ libraries
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Java object files and packages
+*.class
+*.jar
+*.war
+*.ear
+
+# Latex eps to pdf
+*-eps-converted-to.pdf
