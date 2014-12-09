@@ -118,7 +118,11 @@ def potentialFromBoxes(shape, boxes, potentials):
 	n,m = shape
 	potgrid = np.zeros(shape)
 	for i,j in itertools.product(range(n),range(m)):
-		x,y = (float(j)/m, float(i)/n)
+
+		# FIXME: technically, this method needs to be aware of the boundary condition.
+		# For REFLECTING, spacing is 1/(N+1), and full space at each end.  |---o---o---o---|
+		# For PERIODIC,   spacing is 1/N, with a half-space at each end.   |-o---o---o---o-|
+		x,y = (float(j+1)/(m+1), float(i+1)/(n+1)) # suitable for REFLECTING
 
 		for boxidx in range(len(boxes)):
 			if (x,y) in boxes[boxidx]:
